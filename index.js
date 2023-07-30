@@ -14,6 +14,7 @@
 const isUtf8MimeType = require('./lib/isUtf8MimeType').isUtf8MimeType
 const mime = require('mime')
 const SendStream = require('./lib/SendStream')
+const sendNew = require('./lib/send')
 
 /**
  * Return a `SendStream` for `req` and `path`.
@@ -35,6 +36,7 @@ function send (req, path, options) {
  */
 
 module.exports = send
+module.exports.sendNew = sendNew
 module.exports.default = send
 module.exports.send = send
 module.exports.SendStream = SendStream

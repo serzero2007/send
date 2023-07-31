@@ -137,7 +137,6 @@ test('if-unmodified-since', async function (t) {
   t.strictSame(result2.status, 412)
 })
 
-
 test('if-match', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
@@ -145,6 +144,6 @@ test('if-match', async function (t) {
   const result2 = await send({ headers: { 'if-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
   t.strictSame(result2.status, 200)
 
-  const result3 = await send({ headers: { 'if-match': result1.headers.ETag + "corrupt" } }, '/name.txt', { root: fixtures })
+  const result3 = await send({ headers: { 'if-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
   t.strictSame(result3.status, 412)
 })

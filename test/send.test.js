@@ -42,11 +42,11 @@ function deepEqual (object1, object2) {
 
 test('send', async function (t) {
   const headers = {
-    'Accept-Ranges': 'bytes',
-    'Cache-Control': 'public, max-age=0, immutable',
-    'Last-Modified': Exists,
+    'accept-ranges': 'bytes',
+    'cache-control': 'public, max-age=0, immutable',
+    'last-modified': Exists,
     ETag: Exists,
-    'Content-Type': 'text/plain; charset=UTF-8'
+    'content-type': 'text/plain; charset=UTF-8'
   }
 
   const testCases = [
@@ -124,4 +124,15 @@ test('parseOptions', function (t) {
       t.strictSame(error, testCases[i][1])
     }
   }
+})
+
+test('if-unmodified-since', async function (t) {
+  const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
+
+  const lmod = new Date(result1.headers['last-modified'])
+  const date = new Date(lmod - 60000).toUTCString()
+
+  const result2 = await send({ headers: { 'if-unmodified-since': date } }, '/name.txt', { root: fixtures })
+
+  t.strictSame(result2.status, 412)
 })

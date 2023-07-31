@@ -6,10 +6,53 @@ const send = require('../lib/send')
 
 const fixtures = path.join(__dirname, 'fixtures')
 
+const Exists = Symbol()
+
+function isObject(object) {
+  return object != null && typeof object === 'object';
+}
+
+function deepEqual(object1, object2) {
+  const areObjects = isObject(object1) && isObject(object1)
+  if (!areObjects) 
+    return object1 == object2
+
+  const keys1 = Object.keys(object1);
+  const keys2 = Object.keys(object2);
+
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+
+  for (const key of keys1) {
+    const val1 = object1[key];
+    const val2 = object2[key];
+    if (val2 == Exists) continue
+    const areObjects = isObject(val1) && isObject(val2);
+    if (
+      areObjects && !deepEqual(val1, val2) ||
+      !areObjects && val1 !== val2
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 test('send', async function (t) {
+
+  const headers = {                                          
+   "Accept-Ranges": "bytes",                                  
+   "Cache-Control": "public, max-age=0, immutable",           
+   "Last-Modified": Exists,          
+   "ETag": Exists,                             
+   "Content-Type": "text/plain; charset=UTF-8",               
+  }
+
   const testCases = [
-    [[{ headers: {} }, `${fixtures}/empty.txt`], {}],
-    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], {}],
+    [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, "type": "text/plain; charset=UTF-8", headers, stream: Exists }],
+    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, "type": "text/plain; charset=UTF-8", headers, stream: Exists }],
     [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['jpg'] }], { status: 404 }],
     [[{ headers: {} }, `${fixtures}/`], new Error('Not implemented self.redirect(path)')],
     [[{ headers: {} }, '\0'], { status: 400 }],
@@ -19,11 +62,17 @@ test('send', async function (t) {
   t.plan(testCases.length)
 
   for (let i = 0; i < testCases.length; ++i) {
+    const template = testCases[i][1]
     try {
       const result = await send(...testCases[i][0])
-      t.strictSame(result, testCases[i][1])
+      const ok = deepEqual(result, template)
+      if (!t.ok(ok)) {
+        console.log({ result, template })
+      }
     } catch (error) {
-      t.strictSame(error, testCases[i][1])
+      if (!t.strictSame(error, template)) {
+        console.log(error)
+      }
     }
   }
 })

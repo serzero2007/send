@@ -4,10 +4,10 @@ const { test } = require('tap')
 const path = require('path')
 const send = require('../lib/send')
 const { parseOptions } = require('../lib/parseOptions')
-const streamEqual = require('stream-equal');
+// const streamEqual = require('stream-equal')
 const fixtures = path.join(__dirname, 'fixtures')
 
-function streamToString2(stream){
+function streamToString2 (stream) {
   const chunks = []
   return new Promise((resolve, reject) => {
     stream.on('data', chunk => chunks.push(chunk))
@@ -142,8 +142,17 @@ test('if-unmodified-since', async function (t) {
   const date = new Date(lmod - 60000).toUTCString()
 
   const result2 = await send({ headers: { 'if-unmodified-since': date } }, '/name.txt', { root: fixtures })
-
   t.strictSame(result2.status, 412)
+
+  // TODO: Is it correct?
+  const result3 = await send({ headers: { 'if-unmodified-since': 'corrupted' } }, '/name.txt', { root: fixtures })
+  t.strictSame(result3.status, 200)
+
+  const content1 = await streamToString2(result1.stream)
+  const content3 = await streamToString2(result3.stream)
+
+  t.strictSame(content1, 'tobi')
+  t.strictSame(content3, 'tobi')
 })
 
 test('if-modified-since', async function (t) {
@@ -196,4 +205,54 @@ test('if-none-match', async function (t) {
   t.strictSame(content1, content3)
 })
 
+test('if-none-match: *', async function (t) {
+  const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
+  t.strictSame(result1.status, 200)
 
+  const result2a = await send({ headers: { 'if-none-match': '*' } }, '/name.txt', { root: fixtures })
+  t.strictSame(result2a.status, 304)
+})
+
+test('extentions', async function (t) {
+  const result1 = await send({ headers: {} }, '/name', { root: fixtures, extensions: 'txt' })
+  t.strictSame(result1.status, 200)
+
+  const result2 = await send({ headers: {} }, '/name', { root: fixtures, extensions: ['dir', 'txt', 'html'] })
+  t.strictSame(result2.status, 200)
+
+  const result3 = await send({ headers: {} }, '/name', { root: fixtures, extensions: ['html'] })
+  t.strictSame(result3.status, 200)
+
+  const content1 = await streamToString2(result1.stream)
+  const content2 = await streamToString2(result2.stream)
+  const content3 = await streamToString2(result3.stream)
+
+  t.strictSame(content1, 'tobi')
+  t.strictSame(content2, 'tobi')
+  t.strictSame(content3, '<p>tobi</p>')
+
+  const result4 = await send({ headers: {} }, '/name/', { root: fixtures, extensions: ['dir', 'txt', 'html'] })
+  t.strictSame(result4.status, 404)
+
+  const result5 = await send({ headers: {} }, '/name.html/', { root: fixtures, extensions: ['dir', 'txt', 'html'] })
+  t.strictSame(result5.status, 404)
+})
+
+test('malicious path', async function (t) {
+  const result1 = await send({ headers: {} }, '/../../index.js', { root: fixtures })
+  t.strictSame(result1.status, 403)
+
+  const result2 = await send({ headers: {} }, '/\0.html', { root: fixtures })
+  t.strictSame(result2.status, 400)
+})
+
+test('dotfiles', async function (t) {
+  const result1 = await send({ headers: {} }, '/.hidden.txt', { root: fixtures, dotfiles: 'deny' })
+  t.strictSame(result1.status, 403)
+
+  const result2 = await send({ headers: {} }, '/.hidden.txt', { root: fixtures, dotfiles: 'allow' })
+  t.strictSame(result2.status, 200)
+
+  const result3 = await send({ headers: {} }, '/.hidden.txt', { root: fixtures, dotfiles: 'ignore' })
+  t.strictSame(result3.status, 404)
+})

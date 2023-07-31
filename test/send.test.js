@@ -89,6 +89,8 @@ test('parseOptions', function (t) {
     ],
     lastModified: true,
     maxage: 0,
+    start: 0,
+    end: undefined,
     root: null
   }
 

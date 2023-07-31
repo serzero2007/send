@@ -50,8 +50,8 @@ test('send', async function (t) {
   }
 
   const testCases = [
-    [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, type: 'text/plain; charset=UTF-8', headers, stream: Exists }],
-    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, type: 'text/plain; charset=UTF-8', headers, stream: Exists }],
+    [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, headers, stream: Exists }],
+    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, headers, stream: Exists }],
     [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['jpg'] }], { status: 404 }],
     [[{ headers: {} }, `${fixtures}/`], new Error('Not implemented self.redirect(path)')],
     [[{ headers: {} }, '\0'], { status: 400 }],

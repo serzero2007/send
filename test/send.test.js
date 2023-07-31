@@ -4,8 +4,17 @@ const { test } = require('tap')
 const path = require('path')
 const send = require('../lib/send')
 const { parseOptions } = require('../lib/parseOptions')
-
+const streamEqual = require('stream-equal');
 const fixtures = path.join(__dirname, 'fixtures')
+
+function streamToString2(stream){
+  const chunks = []
+  return new Promise((resolve, reject) => {
+    stream.on('data', chunk => chunks.push(chunk))
+    stream.on('error', reject)
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+  })
+}
 
 const Exists = Symbol('Exists')
 
@@ -137,6 +146,20 @@ test('if-unmodified-since', async function (t) {
   t.strictSame(result2.status, 412)
 })
 
+test('if-modified-since', async function (t) {
+  const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
+
+  const lmod = new Date(result1.headers['last-modified'])
+  const date2 = new Date(lmod - 60000).toUTCString()
+  const result2 = await send({ headers: { 'if-modified-since': date2 } }, '/name.txt', { root: fixtures })
+  t.strictSame(result2.status, 200)
+
+  const date3 = new Date(lmod + 60000).toUTCString()
+  const result3 = await send({ headers: { 'if-modified-since': date3 } }, '/name.txt', { root: fixtures })
+
+  t.strictSame(result3.status, 304)
+})
+
 test('if-match', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
@@ -161,6 +184,16 @@ test('if-none-match', async function (t) {
   const result2b = await send({ headers: { 'if-none-match': result1.headers.ETag.slice(2) } }, '/name.txt', { root: fixtures })
   t.strictSame(result2b.status, 304)
 
+  const result2c = await send({ headers: { 'cache-control': 'no-cache', 'if-none-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  t.strictSame(result2c.status, 200)
+
   const result3 = await send({ headers: { 'if-none-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
   t.strictSame(result3.status, 200)
+
+  const content1 = await streamToString2(result1.stream)
+  const content3 = await streamToString2(result3.stream)
+
+  t.strictSame(content1, content3)
 })
+
+

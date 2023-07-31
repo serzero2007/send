@@ -147,3 +147,14 @@ test('if-match', async function (t) {
   const result3 = await send({ headers: { 'if-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
   t.strictSame(result3.status, 412)
 })
+
+test('if-none-match', async function (t) {
+  const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
+  t.strictSame(result1.status, 200)
+
+  const result2 = await send({ headers: { 'if-none-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  t.strictSame(result2.status, 304)
+
+  const result3 = await send({ headers: { 'if-none-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
+  t.strictSame(result3.status, 200)
+})

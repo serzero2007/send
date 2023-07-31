@@ -3,56 +3,55 @@
 const { test } = require('tap')
 const path = require('path')
 const send = require('../lib/send')
+const { parseOptions } = require('../lib/parseOptions')
 
 const fixtures = path.join(__dirname, 'fixtures')
 
-const Exists = Symbol()
+const Exists = Symbol('Exists')
 
-function isObject(object) {
-  return object != null && typeof object === 'object';
+function isObject (object) {
+  return object != null && typeof object === 'object'
 }
 
-function deepEqual(object1, object2) {
+function deepEqual (object1, object2) {
   const areObjects = isObject(object1) && isObject(object1)
-  if (!areObjects) 
-    return object1 == object2
+  if (!areObjects) { return object1 === object2 }
 
-  const keys1 = Object.keys(object1);
-  const keys2 = Object.keys(object2);
+  const keys1 = Object.keys(object1)
+  const keys2 = Object.keys(object2)
 
   if (keys1.length !== keys2.length) {
-    return false;
+    return false
   }
 
   for (const key of keys1) {
-    const val1 = object1[key];
-    const val2 = object2[key];
-    if (val2 == Exists) continue
-    const areObjects = isObject(val1) && isObject(val2);
+    const val1 = object1[key]
+    const val2 = object2[key]
+    if (val2 === Exists) continue
+    const areObjects = isObject(val1) && isObject(val2)
     if (
-      areObjects && !deepEqual(val1, val2) ||
-      !areObjects && val1 !== val2
+      (areObjects && !deepEqual(val1, val2)) ||
+      (!areObjects && val1 !== val2)
     ) {
-      return false;
+      return false
     }
   }
 
-  return true;
+  return true
 }
 
 test('send', async function (t) {
-
-  const headers = {                                          
-   "Accept-Ranges": "bytes",                                  
-   "Cache-Control": "public, max-age=0, immutable",           
-   "Last-Modified": Exists,          
-   "ETag": Exists,                             
-   "Content-Type": "text/plain; charset=UTF-8",               
+  const headers = {
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'public, max-age=0, immutable',
+    'Last-Modified': Exists,
+    ETag: Exists,
+    'Content-Type': 'text/plain; charset=UTF-8'
   }
 
   const testCases = [
-    [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, "type": "text/plain; charset=UTF-8", headers, stream: Exists }],
-    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, "type": "text/plain; charset=UTF-8", headers, stream: Exists }],
+    [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, type: 'text/plain; charset=UTF-8', headers, stream: Exists }],
+    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, type: 'text/plain; charset=UTF-8', headers, stream: Exists }],
     [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['jpg'] }], { status: 404 }],
     [[{ headers: {} }, `${fixtures}/`], new Error('Not implemented self.redirect(path)')],
     [[{ headers: {} }, '\0'], { status: 400 }],
@@ -117,7 +116,7 @@ test('parseOptions', function (t) {
 
   for (let i = 0; i < testCases.length; ++i) {
     try {
-      const result = send.parseOptions(testCases[i][0])
+      const result = parseOptions(testCases[i][0])
       t.strictSame(result, testCases[i][1])
     } catch (error) {
       t.strictSame(error, testCases[i][1])

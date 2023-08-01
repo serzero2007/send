@@ -257,83 +257,75 @@ test('dotfiles', async function (t) {
   t.strictSame(result3.status, 404)
 })
 
-
 test('range', async function (t) {
-  const result1 = await send({ headers: { range: "bytes=" } }, '/name.txt', { root: fixtures })
+  const result1 = await send({ headers: { range: 'bytes=' } }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 416)
 
-  const result2 = await send({ headers: { range: "bytes=0-1" } }, '/name.txt', { root: fixtures })
+  const result2 = await send({ headers: { range: 'bytes=0-1' } }, '/name.txt', { root: fixtures })
   const content2 = await streamToString2(result2.stream)
   t.strictSame(result2.status, 206)
-  t.strictSame(content2, "to")
+  t.strictSame(content2, 'to')
 
-
-  const result3 = await send({ headers: { range: "bytes=1-3" } }, '/name.txt', { root: fixtures })
+  const result3 = await send({ headers: { range: 'bytes=1-3' } }, '/name.txt', { root: fixtures })
   const content3 = await streamToString2(result3.stream)
   t.strictSame(result3.status, 206)
-  t.strictSame(content3, "obi")
+  t.strictSame(content3, 'obi')
 
-  const result4 = await send({ headers: { range: "bytes=0-0, 2-2" } }, '/name.txt', { root: fixtures })
+  const result4 = await send({ headers: { range: 'bytes=0-0, 2-2' } }, '/name.txt', { root: fixtures })
   const content4 = await streamToString2(result4.stream)
   t.strictSame(result4.status, 200)
-  t.strictSame(content4, "tobi")
+  t.strictSame(content4, 'tobi')
 
   // Range merging ?
-  const result5 = await send({ headers: { range: "bytes=0-1, 2-2" } }, '/name.txt', { root: fixtures })
+  const result5 = await send({ headers: { range: 'bytes=0-1, 2-2' } }, '/name.txt', { root: fixtures })
   const content5 = await streamToString2(result5.stream)
   t.strictSame(result5.status, 206)
-  t.strictSame(content5, "tob")
+  t.strictSame(content5, 'tob')
 
   const result6 = await send({ headers: {} }, '/name.txt', { root: fixtures, start: 1, end: 1 })
   const content6 = await streamToString2(result6.stream)
   t.strictSame(result6.status, 200)
-  t.strictSame(content6, "o")
+  t.strictSame(content6, 'o')
 })
-
-
 
 test('if range', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
 
-
-  const result2 = await send({ headers: { range: "bytes=0-1", "if-range": result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  const result2 = await send({ headers: { range: 'bytes=0-1', 'if-range': result1.headers.ETag } }, '/name.txt', { root: fixtures })
   const content2 = await streamToString2(result2.stream)
   t.strictSame(result2.status, 206)
-  t.strictSame(content2, "to")
+  t.strictSame(content2, 'to')
 
   const lmod = new Date(result1.headers['last-modified'])
 
   const date3 = new Date(lmod - 60000).toUTCString()
-  const result3 = await send({ headers: { range: "bytes=0-1", "if-range": date3 } }, '/name.txt', { root: fixtures })
+  const result3 = await send({ headers: { range: 'bytes=0-1', 'if-range': date3 } }, '/name.txt', { root: fixtures })
   const content3 = await streamToString2(result3.stream)
   t.strictSame(result3.status, 200)
-  t.strictSame(content3, "tobi")
+  t.strictSame(content3, 'tobi')
 
   const date4 = new Date(lmod + 60000).toUTCString()
-  const result4 = await send({ headers: { range: "bytes=0-1", "if-range": date4 } }, '/name.txt', { root: fixtures })
+  const result4 = await send({ headers: { range: 'bytes=0-1', 'if-range': date4 } }, '/name.txt', { root: fixtures })
   const content4 = await streamToString2(result4.stream)
   t.strictSame(result4.status, 206)
-  t.strictSame(content4, "to")
+  t.strictSame(content4, 'to')
 
-
-  const result5 = await send({ headers: { range: "bytes=0-1", "if-range": "corrupted" } }, '/name.txt', { root: fixtures })
+  const result5 = await send({ headers: { range: 'bytes=0-1', 'if-range': 'corrupted' } }, '/name.txt', { root: fixtures })
   const content5 = await streamToString2(result5.stream)
   t.strictSame(result5.status, 200)
-  t.strictSame(content5, "tobi")
+  t.strictSame(content5, 'tobi')
 
-  const result6 = await send({ headers: { range: "bytes=0-1" } }, '/name.txt', { root: fixtures, acceptRanges: false })
+  const result6 = await send({ headers: { range: 'bytes=0-1' } }, '/name.txt', { root: fixtures, acceptRanges: false })
   const content6 = await streamToString2(result6.stream)
   t.strictSame(result6.status, 200)
-  t.strictSame(content6, "tobi")
+  t.strictSame(content6, 'tobi')
 
-  const result7 = await send({ headers: { range: "corrupted" } }, '/name.txt', { root: fixtures })
+  const result7 = await send({ headers: { range: 'corrupted' } }, '/name.txt', { root: fixtures })
   const content7 = await streamToString2(result7.stream)
   t.strictSame(result7.status, 200)
-  t.strictSame(content7, "tobi")
+  t.strictSame(content7, 'tobi')
 })
-
-
 
 test('type', async function (t) {
   // TODO Check type header
@@ -344,54 +336,62 @@ test('type', async function (t) {
   t.strictSame(result2.status, 200)
 })
 
-
 test('disabling headers', async function (t) {
   // TODO Check header
-  const result1 = await send({ headers: {} }, '/images/node-js.png', { 
-    root: fixtures, 
-    cacheControl: false, 
-    lastModified: false, 
-    etag: false 
+  const result1 = await send({ headers: {} }, '/images/node-js.png', {
+    root: fixtures,
+    cacheControl: false,
+    lastModified: false,
+    etag: false
   })
   t.strictSame(result1.status, 200)
 })
-
 
 test('immutable', async function (t) {
   // TODO Check header
-  const result1 = await send({ headers: {} }, '/images/node-js.png', { 
-    root: fixtures, 
-    cacheControl: true, 
-    immutable: true, 
+  const result1 = await send({ headers: {} }, '/images/node-js.png', {
+    root: fixtures,
+    cacheControl: true,
+    immutable: true
   })
   t.strictSame(result1.status, 200)
 
-
   // TODO Check header
-  const result2 = await send({ headers: {} }, '/images/node-js.png', { 
-    root: fixtures, 
-    cacheControl: true, 
-    immutable: false, 
+  const result2 = await send({ headers: {} }, '/images/node-js.png', {
+    root: fixtures,
+    cacheControl: true,
+    immutable: false
   })
   t.strictSame(result2.status, 200)
 })
 
-
 test('start/end', async function (t) {
   // TODO Check header
-  const result1 = await send({ headers: {} }, '/name.txt', { 
-    root: fixtures, 
-    start: 0, 
-    end: 1, 
+  const result1 = await send({ headers: {} }, '/name.txt', {
+    root: fixtures,
+    start: 0,
+    end: 1
   })
   t.strictSame(result1.status, 200)
 
-
   // TODO Check header
-  const result2 = await send({ headers: {} }, '/name.txt', { 
-    root: fixtures, 
-    start: 0, 
-    end: 100, 
+  const result2 = await send({ headers: {} }, '/name.txt', {
+    root: fixtures,
+    start: 0,
+    end: 100
   })
   t.strictSame(result2.status, 200)
+})
+
+test('index', async function (t) {
+  // TODO Check header
+  const result1 = await send({ headers: {} }, '/pets/', { root: fixtures })
+  t.strictSame(result1.status, 200)
+
+
+  const result2 = await send({ headers: {} }, '/', { root: fixtures })
+  t.strictSame(result2.status, 404)
+
+  const result3 = await send({ headers: {} }, '/', { root: fixtures, index: [ "images", "pets/index.html" ] })
+  t.strictSame(result3.status, 200)
 })

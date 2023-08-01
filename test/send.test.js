@@ -388,10 +388,9 @@ test('index', async function (t) {
   const result1 = await send({ headers: {} }, '/pets/', { root: fixtures })
   t.strictSame(result1.status, 200)
 
-
   const result2 = await send({ headers: {} }, '/', { root: fixtures })
   t.strictSame(result2.status, 404)
 
-  const result3 = await send({ headers: {} }, '/', { root: fixtures, index: [ "images", "pets/index.html" ] })
+  const result3 = await send({ headers: {} }, '/', { root: fixtures, index: ['images', 'pets/index.html'] })
   t.strictSame(result3.status, 200)
 })

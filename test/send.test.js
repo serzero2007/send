@@ -54,17 +54,17 @@ test('send', async function (t) {
     'accept-ranges': 'bytes',
     'cache-control': 'public, max-age=0, immutable',
     'last-modified': Exists,
-    ETag: Exists,
+    etag: Exists,
     'content-type': 'text/plain; charset=UTF-8'
   }
 
   const testCases = [
     [[{ headers: {} }, `${fixtures}/empty.txt`], { status: 200, headers, stream: Exists }],
     [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['txt'] }], { status: 200, headers, stream: Exists }],
-    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['jpg'] }], { status: 404 }],
+    [[{ headers: {} }, `${fixtures}/empty`, { extensions: ['jpg'] }], { status: 404, headers: {}, stream: null }],
     [[{ headers: {} }, `${fixtures}/`], new Error('Not implemented self.redirect(path)')],
-    [[{ headers: {} }, '\0'], { status: 400 }],
-    [[{ headers: {} }, '/some%99thing.txt'], { status: 400 }]
+    [[{ headers: {} }, '\0'], { status: 400, headers: {}, stream: null }],
+    [[{ headers: {} }, '/some%99thing.txt'], { status: 400, headers: {}, stream: null }]
   ]
 
   t.plan(testCases.length)
@@ -173,13 +173,13 @@ test('if-match', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
 
-  const result2a = await send({ headers: { 'if-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  const result2a = await send({ headers: { 'if-match': result1.headers.etag } }, '/name.txt', { root: fixtures })
   t.strictSame(result2a.status, 200)
 
-  const result2b = await send({ headers: { 'if-match': result1.headers.ETag.slice(2) } }, '/name.txt', { root: fixtures })
+  const result2b = await send({ headers: { 'if-match': result1.headers.etag.slice(2) } }, '/name.txt', { root: fixtures })
   t.strictSame(result2b.status, 200)
 
-  const result3 = await send({ headers: { 'if-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
+  const result3 = await send({ headers: { 'if-match': result1.headers.etag + 'corrupt' } }, '/name.txt', { root: fixtures })
   t.strictSame(result3.status, 412)
 })
 
@@ -187,16 +187,16 @@ test('if-none-match', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
 
-  const result2a = await send({ headers: { 'if-none-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  const result2a = await send({ headers: { 'if-none-match': result1.headers.etag } }, '/name.txt', { root: fixtures })
   t.strictSame(result2a.status, 304)
 
-  const result2b = await send({ headers: { 'if-none-match': result1.headers.ETag.slice(2) } }, '/name.txt', { root: fixtures })
+  const result2b = await send({ headers: { 'if-none-match': result1.headers.etag.slice(2) } }, '/name.txt', { root: fixtures })
   t.strictSame(result2b.status, 304)
 
-  const result2c = await send({ headers: { 'cache-control': 'no-cache', 'if-none-match': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  const result2c = await send({ headers: { 'cache-control': 'no-cache', 'if-none-match': result1.headers.etag } }, '/name.txt', { root: fixtures })
   t.strictSame(result2c.status, 200)
 
-  const result3 = await send({ headers: { 'if-none-match': result1.headers.ETag + 'corrupt' } }, '/name.txt', { root: fixtures })
+  const result3 = await send({ headers: { 'if-none-match': result1.headers.etag + 'corrupt' } }, '/name.txt', { root: fixtures })
   t.strictSame(result3.status, 200)
 
   const content1 = await streamToString2(result1.stream)
@@ -288,11 +288,22 @@ test('range', async function (t) {
   t.strictSame(content6, 'o')
 })
 
+test('range2', async function (t) {
+  const result1 = await send({ headers: { range: 'bytes=0-2' } }, '/name.txt', { root: fixtures, start: 1, end: 6 })
+  t.strictSame(result1.status, 206)
+  t.strictSame(await streamToString2(result1.stream), 'obi')
+
+  const result6 = await send({ headers: { range: 'bytes=0-2' } }, '/name.txt', { root: fixtures, start: 1, end: 1 })
+  const content6 = await streamToString2(result6.stream)
+  t.strictSame(result6.status, 206)
+  t.strictSame(content6, 'o')
+})
+
 test('if range', async function (t) {
   const result1 = await send({ headers: {} }, '/name.txt', { root: fixtures })
   t.strictSame(result1.status, 200)
 
-  const result2 = await send({ headers: { range: 'bytes=0-1', 'if-range': result1.headers.ETag } }, '/name.txt', { root: fixtures })
+  const result2 = await send({ headers: { range: 'bytes=0-1', 'if-range': result1.headers.etag } }, '/name.txt', { root: fixtures })
   const content2 = await streamToString2(result2.stream)
   t.strictSame(result2.status, 206)
   t.strictSame(content2, 'to')
